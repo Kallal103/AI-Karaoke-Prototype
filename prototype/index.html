@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookspace Karaoke - Platform Demo</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  body {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 40px 20px; min-height: 100vh;
+  }
+
+  /* Top bar */
+  .demo-bar {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 32px; background: var(--card);
+    border-bottom: 1px solid var(--border); z-index: 100;
+  }
+  .demo-bar-brand { display: flex; align-items: center; gap: 10px; }
+  .demo-bar-logo {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary), #a855f7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: white;
+  }
+  .demo-bar-name { font-size: 15px; font-weight: 700; }
+  .demo-bar-tag { font-size: 12px; color: var(--text-dim); }
+  .demo-bar-right { display: flex; align-items: center; gap: 16px; }
+  .demo-venue-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 10px;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .demo-venue-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+  /* Hero */
+  .hero { text-align: center; margin-top: 80px; margin-bottom: 48px; }
+  .hero-logo {
+    width: 72px; height: 72px; border-radius: 18px;
+    background: linear-gradient(135deg, var(--primary), #a855f7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 800; color: white;
+    margin: 0 auto 20px;
+    box-shadow: 0 12px 40px rgba(108,92,231,0.3);
+  }
+  .hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 6px; }
+  .hero h1 span { color: var(--primary); }
+  .hero .subtitle { color: var(--text-dim); font-size: 16px; margin-bottom: 6px; }
+  .hero .demo-label {
+    display: inline-block; padding: 5px 14px; border-radius: 8px;
+    background: var(--primary-light); color: var(--primary);
+    font-size: 12px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* Surface grid */
+  .surfaces {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px; width: 100%; max-width: 1100px;
+  }
+
+  .surface-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px 24px;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .surface-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(108,92,231,0.15);
+  }
+  .surface-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--primary), #a855f7);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .surface-card:hover::before { opacity: 1; }
+
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+  .card-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .card-viewport {
+    font-size: 11px; color: var(--text-dim);
+    background: rgba(255,255,255,0.04);
+    padding: 4px 10px; border-radius: 6px;
+  }
+  .card-title { font-size: 19px; font-weight: 700; margin-bottom: 6px; }
+  .card-desc { color: var(--text-dim); font-size: 13px; line-height: 1.6; margin-bottom: 14px; }
+  .card-screens {
+    font-size: 12px; color: var(--text-dim);
+    padding-top: 12px; border-top: 1px solid var(--border);
+  }
+  .card-screens strong { color: var(--primary); }
+
+  .guest .card-icon { background: linear-gradient(135deg, var(--primary), #a855f7); color: white; }
+  .host .card-icon { background: linear-gradient(135deg, #00b894, #00cec9); color: white; }
+  .bar .card-icon { background: linear-gradient(135deg, var(--accent), #ee5a24); color: white; }
+  .owner .card-icon { background: linear-gradient(135deg, #fdcb6e, #e17055); color: white; }
+  .stage .card-icon { background: linear-gradient(135deg, #a855f7, var(--primary)); color: white; }
+
+  /* Footer */
+  .footer {
+    margin-top: 48px; text-align: center;
+    color: var(--text-dim); font-size: 12px; line-height: 2;
+  }
+  .footer strong { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+
+<div class="demo-bar">
+  <div class="demo-bar-brand">
+    <div class="demo-bar-logo">C</div>
+    <div>
+      <div class="demo-bar-name">Cookspace Karaoke</div>
+      <div class="demo-bar-tag">Smart venue platform</div>
+    </div>
+  </div>
+  <div class="demo-bar-right">
+    <div class="demo-venue-pill">
+      <span class="demo-venue-dot"></span>
+      <span>Demo Venue: <strong>BAGHA Club</strong></span>
+    </div>
+    <span class="demo-label" style="padding:5px 14px; border-radius:8px; background:var(--primary-light); color:var(--primary); font-size:11px; font-weight:700;">PROTOTYPE v1.0</span>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-logo">C</div>
+  <h1><span>Cookspace</span> Karaoke</h1>
+  <div class="subtitle">White-label karaoke venue platform &mdash; queue, order, score, manage.</div>
+  <div style="height:12px;"></div>
+  <span class="demo-label">Interactive Prototype &middot; Oct 2026</span>
+</div>
+
+<div class="surfaces">
+  <a href="guest.html" class="surface-card guest">
+    <div class="card-top">
+      <div class="card-icon">🎤</div>
+      <span class="card-viewport">📱 Mobile</span>
+    </div>
+    <div class="card-title">Guest App</div>
+    <div class="card-desc">Guests scan a QR code and instantly search songs, join the queue, order food &amp; drinks, and see their live pitch score.</div>
+    <div class="card-screens"><strong>10 screens</strong> &mdash; QR Check-in → Song Search → Detail → Queue → Singing → Score → Menu → Cart → Orders → Bill</div>
+  </a>
+
+  <a href="host.html" class="surface-card host">
+    <div class="card-top">
+      <div class="card-icon">🎛️</div>
+      <span class="card-viewport">📋 Tablet</span>
+    </div>
+    <div class="card-title">Host / KJ Console</div>
+    <div class="card-desc">The karaoke host manages the song queue, monitors private rooms, and controls stage announcements from one screen.</div>
+    <div class="card-screens"><strong>3 screens</strong> &mdash; Queue Board &middot; Room Overview &middot; Announcements</div>
+  </a>
+
+  <a href="bar.html" class="surface-card bar">
+    <div class="card-top">
+      <div class="card-icon">🍹</div>
+      <span class="card-viewport">📋 Tablet</span>
+    </div>
+    <div class="card-title">Bar / Kitchen</div>
+    <div class="card-desc">Kanban-style order board. Orders flow from received → preparing → ready with one tap at each stage.</div>
+    <div class="card-screens"><strong>1 screen</strong> &mdash; Order Board (New → Preparing → Ready → Delivered)</div>
+  </a>
+
+  <a href="owner.html" class="surface-card owner">
+    <div class="card-top">
+      <div class="card-icon">📊</div>
+      <span class="card-viewport">🖥️ Desktop</span>
+    </div>
+    <div class="card-title">Owner Dashboard</div>
+    <div class="card-desc">Live revenue, analytics, peak hours heatmap, room utilization, and full venue configuration in one place.</div>
+    <div class="card-screens"><strong>3 screens</strong> &mdash; Tonight (Live) &middot; Analytics &middot; Venue Settings</div>
+  </a>
+
+  <a href="stage.html" class="surface-card stage">
+    <div class="card-top">
+      <div class="card-icon">📺</div>
+      <span class="card-viewport">🖥️ TV / Projector</span>
+    </div>
+    <div class="card-title">Stage Screen</div>
+    <div class="card-desc">Displayed on the venue TV — lyrics with live pitch visualization, score ring, up-next queue, and idle branding.</div>
+    <div class="card-screens"><strong>3 screens</strong> &mdash; Now Playing &middot; Up Next &middot; Idle (auto-cycles every 8s)</div>
+  </a>
+</div>
+
+<div class="footer">
+  <strong>Cookspace Karaoke</strong> &middot; White-Label Venue Platform<br>
+  Sponsor: Vanes &middot; CPO: Kallal Das &middot; Architect: Rabib<br>
+  <span style="color:var(--primary);">cookspace.ca</span>
+</div>
+
+<script src="config.js"></script>
+</body>
+</html>

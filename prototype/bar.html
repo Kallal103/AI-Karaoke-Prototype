@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookspace Karaoke - Bar Console</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { min-height: 100vh; }
+
+  /* Top Bar */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 32px; background: var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+  .tb-left { display: flex; align-items: center; gap: 14px; }
+  .tb-logo {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), #ee5a24);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; color: white;
+  }
+  .tb-title { font-size: 16px; font-weight: 700; }
+  .tb-sub { font-size: 12px; color: var(--text-dim); }
+  .tb-stats { display: flex; gap: 20px; align-items: center; }
+  .stat-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.04); font-size: 13px;
+  }
+  .stat-pill .num { font-weight: 700; font-size: 16px; }
+  .stat-pill.s-new .num { color: var(--accent); }
+  .stat-pill.s-prep .num { color: var(--warning); }
+  .stat-pill.s-ready .num { color: var(--success); }
+  .sound-btn {
+    width: 36px; height: 36px; border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    color: var(--text); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sound-btn.muted { opacity: 0.4; }
+
+  /* Board */
+  .board {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px; padding: 24px 32px; height: calc(100vh - 65px);
+  }
+  .column {
+    background: rgba(255,255,255,0.015); border-radius: var(--radius-lg);
+    padding: 18px; border: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .col-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  }
+  .col-title { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .col-count { padding: 3px 10px; border-radius: 8px; font-size: 12px; font-weight: 700; }
+  .col-new .col-count { background: var(--accent-light); color: var(--accent); }
+  .col-prep .col-count { background: var(--warning-light); color: var(--warning); }
+  .col-ready .col-count { background: var(--success-light); color: var(--success); }
+  .col-new .col-title::before { content:''; width:8px; height:8px; border-radius:50%; background:var(--accent); animation:pulse 2s infinite; }
+  .col-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+
+  /* Order Cards */
+  .order-card {
+    background: var(--card); border-radius: var(--radius-lg);
+    padding: 16px; border: 1px solid var(--border);
+    transition: all 0.3s; animation: slideUp 0.3s ease-out;
+  }
+  .oc-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .oc-id { font-weight: 700; font-size: 14px; }
+  .oc-time { color: var(--text-dim); font-size: 12px; }
+  .oc-table {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 10px; border-radius: 8px;
+    font-size: 12px; font-weight: 600; margin-bottom: 10px;
+  }
+  .col-new .oc-table { background: var(--accent-light); color: var(--accent); }
+  .col-prep .oc-table { background: var(--warning-light); color: var(--warning); }
+  .col-ready .oc-table { background: var(--success-light); color: var(--success); }
+  .oc-items { margin-bottom: 12px; }
+  .oc-item { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; }
+  .oc-item .qty { color: var(--text-dim); }
+  .oc-total {
+    display: flex; justify-content: space-between;
+    padding-top: 8px; border-top: 1px solid var(--border);
+    font-weight: 700; font-size: 13px; margin-bottom: 12px;
+  }
+  .oc-btn {
+    width: 100%; padding: 10px; border-radius: var(--radius-sm);
+    border: none; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: var(--font); transition: all 0.2s;
+  }
+  .oc-btn:hover { transform: scale(1.02); }
+  .btn-accept { background: var(--accent); color: white; }
+  .btn-ready { background: var(--warning); color: #1a1a2e; }
+  .btn-delivered { background: var(--success); color: #1a1a2e; }
+
+  .empty-state { text-align: center; color: var(--text-dim); padding: 40px 20px; font-size: 14px; }
+
+  /* Powered footer */
+  .bar-powered {
+    position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%);
+    font-size: 11px; color: var(--text-dim);
+  }
+  .bar-powered strong { color: var(--primary); }
+  .home-link-bar {
+    display: inline-flex; align-items: center; gap: 6px;
+    text-decoration: none; color: var(--text-dim); font-size: 12px;
+    transition: color 0.2s;
+  }
+  .home-link-bar:hover { color: var(--primary); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-left">
+    <div class="tb-logo">C</div>
+    <div>
+      <div class="tb-title">BAGHA Club · Bar Console</div>
+      <div class="tb-sub">Cookspace Karaoke</div>
+    </div>
+  </div>
+  <div class="tb-stats">
+    <div class="stat-pill s-new"><span>New</span> <span class="num" id="stat-new">2</span></div>
+    <div class="stat-pill s-prep"><span>Preparing</span> <span class="num" id="stat-prep">2</span></div>
+    <div class="stat-pill s-ready"><span>Ready</span> <span class="num" id="stat-ready">2</span></div>
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+  </div>
+</div>
+
+<div class="board">
+  <!-- New Orders -->
+  <div class="column col-new">
+    <div class="col-header"><div class="col-title">New Orders</div><span class="col-count" id="count-new">2</span></div>
+    <div class="col-body" id="col-new">
+      <div class="order-card" id="o-1247">
+        <div class="oc-top"><span class="oc-id">#1247</span><span class="oc-time">9:42 PM</span></div>
+        <div class="oc-table">📍 Table 7</div>
+        <div class="oc-items">
+          <div class="oc-item"><span>Heineken Draft <span class="qty">×2</span></span><span>Tk 900</span></div>
+          <div class="oc-item"><span>Nachos Supreme <span class="qty">×1</span></span><span>Tk 380</span></div>
+        </div>
+        <div class="oc-total"><span>Total</span><span>Tk 1,280</span></div>
+        <button class="oc-btn btn-accept" onclick="moveCard('o-1247','col-new','col-prep')">✓ Accept Order</button>
+      </div>
+      <div class="order-card" id="o-1248">
+        <div class="oc-top"><span class="oc-id">#1248</span><span class="oc-time">9:44 PM</span></div>
+        <div class="oc-table">📍 Room C</div>
+        <div class="oc-items">
+          <div class="oc-item"><span>House Red Wine <span class="qty">×3</span></span><span>Tk 1,950</span></div>
+          <div class="oc-item"><span>Mojito <span class="qty">×2</span></span><span>Tk 1,100</span></div>
+        </div>
+        <div class="oc-total"><span>Total</span><span>Tk 3,050</span></div>
+        <button class="oc-btn btn-accept" onclick="moveCard('o-1248','col-new','col-prep')">✓ Accept Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preparing -->
+  <div class="column col-prep">
+    <div class="col-header"><div class="col-title">Preparing</div><span class="col-count" id="count-prep">2</span></div>
+    <div class="col-body" id="col-prep">
+      <div class="order-card" id="o-1245">
+        <div class="oc-top"><span class="oc-id">#1245</span><span class="oc-time">9:35 PM</span></div>
+        <div class="oc-table">📍 Table 3</div>
+        <div class="oc-items">
+          <div class="oc-item"><span>Coca-Cola <span class="qty">×2</span></span><span>Tk 300</span></div>
+          <div class="oc-item"><span>Fish &amp; Chips <span class="qty">×1</span></span><span>Tk 520</span></div>
+        </div>
+        <div class="oc-total"><span>Total</span><span>Tk 820</span></div>
+        <button class="oc-btn btn-ready" onclick="moveCard('o-1245','col-prep','col-ready')">🍽 Mark Ready</button>
+      </div>
+      <div class="order-card" id="o-1246">
+        <div class="oc-top"><span class="oc-id">#1246</span><span class="oc-time">9:38 PM</span></div>
+        <div class="oc-table">📍 Table 5</div>
+        <div class="oc-items">
+          <div class="oc-item"><span>Mojito <span class="qty">×1</span></span><span>Tk 550</span></div>
+          <div class="oc-item"><span>Nachos Supreme <span class="qty">×2</span></span><span>Tk 760</span></div>
+        </div>
+        <div class="oc-total"><span>Total</span><span>Tk 1,310</span></div>
+        <button class="oc-btn btn-ready" onclick="moveCard('o-1246','col-prep','col-ready')">🍽 Mark Ready</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ready -->
+  <div class="column col-ready">
+    <div class="col-header"><div class="col-title">Ready for Delivery</div><span class="col-count" id="count-ready">2</span></div>
+    <div class="col-body" id="col-ready">
+      <div class="order-card" id="o-1243">
+        <div class="oc-top"><span class="oc-id">#1243</span><span class="oc-time">9:20 PM</span></div>
+        <div class="oc-table">📍 Room A</div>
+        <div class="oc-items">
+          <div class="oc-item"><span>Heineken Draft <span class="qty">×4</span></span><span>Tk 1,800</span></div>
+          <div class="oc-item"><span>Chicken Wings <span class="qty">×2</span></span><span>Tk 700</span></div>
+        </div>
+        <div class="oc-total"><span>Total</span><span>Tk 2,500</span></div>
+        <button class="oc-btn btn-delivered" onclick="moveCard('o-1243','col-ready',null)">🚚 Delivered</button>
+      </div>
+      <div class="order-card" id="o-1244">
+        <div class="oc-top"><span class="oc-id">#1244</span><span class="oc-time">9:28 PM</span></div>
+        <div class="oc-table">📍 Table 2</div>
+        <div class="oc-items">
+          <div class="oc-item"><span>House Red Wine <span class="qty">×2</span></span><span>Tk 1,300</span></div>
+        </div>
+        <div class="oc-total"><span>Total</span><span>Tk 1,300</span></div>
+        <button class="oc-btn btn-delivered" onclick="moveCard('o-1244','col-ready',null)">🚚 Delivered</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bar-powered"><a href="index.html" class="home-link-bar">← Platform</a> · Powered by <strong>Cookspace Karaoke</strong></div>
+<div class="toast" id="toast"><span class="toast-icon" id="toastIcon"></span><span id="toastMsg"></span></div>
+
+<script src="config.js"></script>
+<script>
+let soundOn = true;
+
+function moveCard(cardId, fromCol, toCol) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  const orderId = card.querySelector('.oc-id').textContent;
+
+  if (!toCol) {
+    card.style.opacity = '0'; card.style.transform = 'scale(0.95)';
+    setTimeout(() => card.remove(), 300);
+    showToast('✓', 'Order ' + orderId + ' delivered');
+  } else {
+    const target = document.getElementById(toCol);
+    card.style.opacity = '0';
+    setTimeout(() => {
+      const btn = card.querySelector('.oc-btn');
+      if (toCol === 'col-prep') {
+        btn.className = 'oc-btn btn-ready';
+        btn.innerHTML = '🍽 Mark Ready';
+        btn.onclick = () => moveCard(cardId, 'col-prep', 'col-ready');
+      } else if (toCol === 'col-ready') {
+        btn.className = 'oc-btn btn-delivered';
+        btn.innerHTML = '🚚 Delivered';
+        btn.onclick = () => moveCard(cardId, 'col-ready', null);
+      }
+      target.appendChild(card);
+      card.style.opacity = '1'; card.style.transform = '';
+      const status = toCol === 'col-prep' ? 'Preparing' : 'Ready';
+      showToast('→', orderId + ' → ' + status);
+    }, 200);
+  }
+  setTimeout(updateCounts, 350);
+}
+
+function updateCounts() {
+  const n = document.getElementById('col-new').children.length;
+  const p = document.getElementById('col-prep').children.length;
+  const r = document.getElementById('col-ready').children.length;
+  document.getElementById('count-new').textContent = n;
+  document.getElementById('count-prep').textContent = p;
+  document.getElementById('count-ready').textContent = r;
+  document.getElementById('stat-new').textContent = n;
+  document.getElementById('stat-prep').textContent = p;
+  document.getElementById('stat-ready').textContent = r;
+}
+
+function showToast(icon, msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastIcon').textContent = icon;
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  if (soundOn) beep();
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+  const btn = document.getElementById('soundBtn');
+  btn.textContent = soundOn ? '🔊' : '🔇';
+  btn.classList.toggle('muted', !soundOn);
+}
+
+function beep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 800; gain.gain.value = 0.1;
+    osc.start(); osc.stop(ctx.currentTime + 0.15);
+  } catch(e) {}
+}
+</script>
+</body>
+</html>

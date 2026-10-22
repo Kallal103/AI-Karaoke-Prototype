@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookspace Karaoke - Host Console</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { display: flex; height: 100vh; overflow: hidden; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px; background: var(--card);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .sb-header { padding: 20px; border-bottom: 1px solid var(--border); }
+  .sb-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .sb-logo {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary), #a855f7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; color: white;
+  }
+  .sb-platform { font-size: 12px; font-weight: 700; color: var(--primary); }
+  .sb-venue { font-size: 16px; font-weight: 700; margin-top: 2px; }
+  .sb-venue-sub { font-size: 12px; color: var(--text-dim); }
+
+  .sb-nav { flex: 1; padding: 8px 0; }
+  .sb-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 20px; width: 100%;
+    background: none; border: none; color: var(--text-dim);
+    font-size: 14px; cursor: pointer; transition: all 0.2s;
+    font-family: var(--font); text-align: left;
+  }
+  .sb-btn:hover { background: rgba(255,255,255,0.03); color: var(--text); }
+  .sb-btn.active { background: var(--primary-light); color: var(--primary); border-right: 3px solid var(--primary); }
+  .sb-btn .ico { font-size: 18px; width: 24px; text-align: center; }
+  .sb-btn .cnt { margin-left: auto; background: var(--accent); color: white; font-size: 11px; padding: 2px 8px; border-radius: 8px; font-weight: 700; }
+
+  .sb-footer {
+    padding: 16px 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-dim);
+  }
+  .sb-home {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 20px; font-size: 12px; color: var(--text-dim);
+    text-decoration: none; border-top: 1px solid var(--border);
+    transition: color 0.2s;
+  }
+  .sb-home:hover { color: var(--primary); }
+  .sb-staff { color: var(--text); font-weight: 600; font-size: 13px; }
+
+  /* Main */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px; background: var(--card);
+    border-bottom: 1px solid var(--border);
+  }
+  .topbar h2 { font-size: 18px; font-weight: 700; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--text-dim); }
+  .live-dot { color: var(--success); }
+  .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Now Playing bar */
+  .np-bar {
+    background: linear-gradient(135deg, rgba(0,200,83,0.08), rgba(0,200,83,0.04));
+    border: 1px solid rgba(0,200,83,0.2); border-radius: var(--radius-lg);
+    padding: 18px 24px; margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .np-left { display: flex; align-items: center; gap: 14px; }
+  .np-badge {
+    background: var(--success); color: #0F0F1A; padding: 5px 12px;
+    border-radius: var(--radius-sm); font-weight: 700; font-size: 12px;
+  }
+  .np-song { font-size: 18px; font-weight: 700; }
+  .np-singer { color: var(--text-dim); font-size: 13px; }
+  .np-progress { width: 180px; }
+  .np-bar-track { height: 5px; background: rgba(255,255,255,0.1); border-radius: 3px; }
+  .np-bar-fill { width: 65%; height: 100%; background: var(--success); border-radius: 3px; }
+  .np-time { font-size: 12px; color: var(--text-dim); text-align: right; margin-top: 4px; }
+
+  /* Queue controls */
+  .q-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .rotation-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 14px; border-radius: var(--radius-sm);
+    background: var(--primary-light); font-size: 13px; color: var(--primary); font-weight: 600;
+  }
+  .btn-next {
+    padding: 12px 28px; border-radius: var(--radius-md); border: none;
+    background: var(--success); color: #0F0F1A;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    font-family: var(--font); transition: all 0.2s;
+  }
+  .btn-next:hover { transform: scale(1.02); }
+
+  /* Queue table */
+  .qtbl { width: 100%; border-collapse: separate; border-spacing: 0 5px; }
+  .qtbl th { text-align: left; padding: 8px 14px; font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+  .qtbl td { padding: 12px 14px; background: var(--card); font-size: 14px; }
+  .qtbl tr td:first-child { border-radius: 10px 0 0 10px; }
+  .qtbl tr td:last-child { border-radius: 0 10px 10px 0; }
+  .qtbl tr.you td { border-top: 1px solid var(--primary); border-bottom: 1px solid var(--primary); }
+  .qtbl tr.you td:first-child { border-left: 1px solid var(--primary); }
+  .qtbl tr.you td:last-child { border-right: 1px solid var(--primary); }
+  .q-pos {
+    width: 30px; height: 30px; border-radius: var(--radius-sm);
+    background: var(--primary-light); color: var(--primary);
+    display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;
+  }
+  .q-drag { cursor: grab; color: var(--text-dim); }
+  .q-song-name { font-weight: 600; }
+  .q-song-artist { color: var(--text-dim); font-size: 12px; }
+  .q-table-pill { padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; background: var(--primary-light); color: var(--primary); }
+  .q-actions { display: flex; gap: 5px; }
+  .q-btn {
+    padding: 5px 8px; border-radius: 6px; border: 1px solid var(--border);
+    background: transparent; color: var(--text-dim); cursor: pointer; font-size: 12px; transition: all 0.2s;
+  }
+  .q-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+
+  /* Room grid */
+  .room-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .room-card {
+    background: var(--card); border-radius: var(--radius-lg);
+    padding: 22px; border: 1px solid var(--border);
+  }
+  .room-card.free { border-color: rgba(0,200,83,0.25); }
+  .room-card.occ { border-color: rgba(108,92,231,0.25); }
+  .room-card.ending { border-color: rgba(255,179,0,0.4); }
+  .rc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .rc-name { font-size: 18px; font-weight: 700; }
+  .rc-timer { font-size: 30px; font-weight: 800; margin: 10px 0; }
+  .rc-timer.t-normal { color: var(--primary); }
+  .rc-timer.t-warn { color: var(--warning); }
+  .rc-timer.t-free { color: var(--success); }
+  .rc-detail { color: var(--text-dim); font-size: 13px; margin-bottom: 4px; }
+  .rc-group { font-weight: 600; font-size: 14px; }
+  .rc-actions { display: flex; gap: 8px; margin-top: 14px; }
+  .rc-btn {
+    flex: 1; padding: 9px; border-radius: var(--radius-sm); border: none;
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font);
+  }
+  .rc-btn.extend { background: var(--primary); color: white; }
+  .rc-btn.end { background: var(--danger-light); color: var(--danger); border: 1px solid rgba(255,71,87,0.3); }
+  .rc-btn.book { background: var(--success); color: #0F0F1A; }
+
+  /* Announcements */
+  .ann-section { max-width: 680px; }
+  .ann-card {
+    background: var(--card); border-radius: var(--radius-lg);
+    padding: 24px; margin-bottom: 20px; border: 1px solid var(--border);
+  }
+  .ann-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+  .ann-singer { font-size: 26px; font-weight: 800; text-align: center; }
+  .ann-song { font-size: 16px; color: var(--primary); text-align: center; margin-top: 4px; }
+  .ann-next {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--card); border-radius: var(--radius-lg);
+    padding: 16px 20px; margin-bottom: 20px; border: 1px solid var(--border);
+  }
+  .ann-next-badge { background: var(--warning-light); color: var(--warning); padding: 5px 12px; border-radius: var(--radius-sm); font-weight: 700; font-size: 12px; white-space: nowrap; }
+  .ann-next-name { font-weight: 700; }
+  .ann-next-song { color: var(--text-dim); font-size: 13px; }
+  .ann-manual { margin-top: 20px; }
+  .ann-manual label { font-size: 14px; font-weight: 600; display: block; margin-bottom: 8px; }
+  .ann-presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .ann-preset {
+    padding: 7px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: transparent; color: var(--text-dim); cursor: pointer; font-size: 12px;
+    font-family: var(--font); transition: all 0.2s;
+  }
+  .ann-preset:hover { border-color: var(--primary); color: var(--primary); }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sb-header">
+    <div class="sb-brand">
+      <div class="sb-logo">C</div>
+      <div class="sb-platform">COOKSPACE KARAOKE</div>
+    </div>
+    <div class="sb-venue">BAGHA Club</div>
+    <div class="sb-venue-sub">Host Console</div>
+  </div>
+  <div class="sb-nav">
+    <button class="sb-btn active" onclick="showPanel('h1',this)"><span class="ico">🎵</span> Queue Board <span class="cnt">8</span></button>
+    <button class="sb-btn" onclick="showPanel('h2',this)"><span class="ico">🏠</span> Rooms <span class="cnt" style="background:var(--warning);color:#1a1a2e;">1</span></button>
+    <button class="sb-btn" onclick="showPanel('h3',this)"><span class="ico">📢</span> Announce</button>
+  </div>
+  <div class="sb-footer">
+    <div class="sb-staff">👤 KJ Rahul</div>
+    <div>Host · Signed in</div>
+    <div class="powered-by" style="padding:8px 0 0;text-align:left;">Powered by <strong>Cookspace</strong></div>
+  </div>
+  <a href="index.html" class="sb-home">← Back to Platform</a>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <h2 id="panel-title">Queue Board</h2>
+    <div class="topbar-right">
+      <span>📅 Oct 20, 2026</span>
+      <span>🕘 9:45 PM</span>
+      <span class="live-dot">● Live</span>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- H1: Queue Board -->
+    <div id="h1" class="panel active">
+      <div class="np-bar">
+        <div class="np-left">
+          <div class="np-badge pulse">▶ NOW</div>
+          <div>
+            <div class="np-song">Tum Hi Ho</div>
+            <div class="np-singer">Rashid · Table 3 · Arijit Singh</div>
+          </div>
+        </div>
+        <div class="np-progress">
+          <div class="np-bar-track"><div class="np-bar-fill"></div></div>
+          <div class="np-time">2:56 / 4:32</div>
+        </div>
+      </div>
+
+      <div class="q-controls">
+        <div class="rotation-pill">🔄 Fair Rotation · Next table: <strong>Table 7</strong></div>
+        <button class="btn-next" onclick="showToast('✓','Advanced to next song')">▶ NEXT SONG</button>
+      </div>
+
+      <table class="qtbl">
+        <thead><tr><th></th><th>#</th><th>Song</th><th>Guest</th><th>Table</th><th>Wait</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="q-drag">☰</span></td>
+            <td><span class="q-pos">2</span></td>
+            <td><div class="q-song-name">Hotel California</div><div class="q-song-artist">Eagles</div></td>
+            <td>Nadia</td>
+            <td><span class="q-table-pill">Table 5</span></td>
+            <td style="color:var(--warning);">~3 min</td>
+            <td><div class="q-actions"><button class="q-btn" onclick="showToast('⬆','Moved to priority')">⬆</button><button class="q-btn" onclick="showToast('⏭','Skipped')">⏭</button><button class="q-btn" onclick="showToast('✕','Removed')">✕</button></div></td>
+          </tr>
+          <tr class="you">
+            <td><span class="q-drag">☰</span></td>
+            <td><span class="q-pos" style="background:var(--primary);color:white;">3</span></td>
+            <td><div class="q-song-name">Amar Shonar Bangla</div><div class="q-song-artist">Rabindranath Tagore</div></td>
+            <td>Kallal ⭐</td>
+            <td><span class="q-table-pill">Table 7</span></td>
+            <td style="color:var(--warning);">~8 min</td>
+            <td><div class="q-actions"><button class="q-btn" onclick="showToast('⬆','Moved to priority')">⬆</button><button class="q-btn" onclick="showToast('⏭','Skipped')">⏭</button><button class="q-btn" onclick="showToast('✕','Removed')">✕</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="q-drag">☰</span></td>
+            <td><span class="q-pos">4</span></td>
+            <td><div class="q-song-name">Channa Mereya</div><div class="q-song-artist">Arijit Singh</div></td>
+            <td>Farhan</td>
+            <td><span class="q-table-pill">Table 2</span></td>
+            <td>~12 min</td>
+            <td><div class="q-actions"><button class="q-btn" onclick="showToast('⬆','Moved to priority')">⬆</button><button class="q-btn" onclick="showToast('⏭','Skipped')">⏭</button><button class="q-btn" onclick="showToast('✕','Removed')">✕</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="q-drag">☰</span></td>
+            <td><span class="q-pos">5</span></td>
+            <td><div class="q-song-name">Ei Meghla Dine Ekla</div><div class="q-song-artist">Hemanta Mukherjee</div></td>
+            <td>Sumaiya</td>
+            <td><span class="q-table-pill">Table 4</span></td>
+            <td>~16 min</td>
+            <td><div class="q-actions"><button class="q-btn" onclick="showToast('⬆','Moved to priority')">⬆</button><button class="q-btn" onclick="showToast('⏭','Skipped')">⏭</button><button class="q-btn" onclick="showToast('✕','Removed')">✕</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="q-drag">☰</span></td>
+            <td><span class="q-pos">6</span></td>
+            <td><div class="q-song-name">Shape of You</div><div class="q-song-artist">Ed Sheeran</div></td>
+            <td>Rifat</td>
+            <td><span class="q-table-pill">Table 8</span></td>
+            <td>~20 min</td>
+            <td><div class="q-actions"><button class="q-btn" onclick="showToast('⬆','Moved to priority')">⬆</button><button class="q-btn" onclick="showToast('⏭','Skipped')">⏭</button><button class="q-btn" onclick="showToast('✕','Removed')">✕</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="q-drag">☰</span></td>
+            <td><span class="q-pos">7</span></td>
+            <td><div class="q-song-name">Bohemian Rhapsody</div><div class="q-song-artist">Queen</div></td>
+            <td>Kallal</td>
+            <td><span class="q-table-pill">Table 7</span></td>
+            <td>~26 min</td>
+            <td><div class="q-actions"><button class="q-btn" onclick="showToast('⬆','Moved to priority')">⬆</button><button class="q-btn" onclick="showToast('⏭','Skipped')">⏭</button><button class="q-btn" onclick="showToast('✕','Removed')">✕</button></div></td>
+          </tr>
+          <tr>
+            <td><span class="q-drag">☰</span></td>
+            <td><span class="q-pos">8</span></td>
+            <td><div class="q-song-name">Lag Ja Gale</div><div class="q-song-artist">Lata Mangeshkar</div></td>
+            <td>Priya</td>
+            <td><span class="q-table-pill">Table 6</span></td>
+            <td>~30 min</td>
+            <td><div class="q-actions"><button class="q-btn" onclick="showToast('⬆','Moved to priority')">⬆</button><button class="q-btn" onclick="showToast('⏭','Skipped')">⏭</button><button class="q-btn" onclick="showToast('✕','Removed')">✕</button></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- H2: Room Overview -->
+    <div id="h2" class="panel">
+      <div class="room-grid">
+        <div class="room-card occ">
+          <div class="rc-header"><div class="rc-name">🏠 Room A</div><span class="badge badge-primary">Occupied</span></div>
+          <div class="rc-group">Rashid's Birthday Party</div>
+          <div class="rc-detail">👥 8 guests · Cap: 12</div>
+          <div class="rc-timer t-normal">1:24:30</div>
+          <div class="rc-detail">8:15 PM → 10:15 PM</div>
+          <div class="rc-actions"><button class="rc-btn extend" onclick="showToast('✓','Extended 1 hour — Tk 1,500')">+1 Hour</button><button class="rc-btn end" onclick="showToast('✓','Session ended')">End</button></div>
+        </div>
+        <div class="room-card ending">
+          <div class="rc-header"><div class="rc-name">🏠 Room B</div><span class="badge badge-warning">Ending Soon</span></div>
+          <div class="rc-group">Nadia &amp; Friends</div>
+          <div class="rc-detail">👥 5 guests · Cap: 8</div>
+          <div class="rc-timer t-warn pulse">0:08:15</div>
+          <div class="rc-detail">7:45 PM → 9:45 PM</div>
+          <div class="rc-actions"><button class="rc-btn extend" onclick="showToast('✓','Extended 1 hour — Tk 1,200')">+1 Hour</button><button class="rc-btn end" onclick="showToast('✓','Session ended')">End</button></div>
+        </div>
+        <div class="room-card occ">
+          <div class="rc-header"><div class="rc-name">🏠 Room C</div><span class="badge badge-primary">Occupied</span></div>
+          <div class="rc-group">Corporate — GrameenPhone</div>
+          <div class="rc-detail">👥 14 guests · Cap: 20</div>
+          <div class="rc-timer t-normal">2:10:45</div>
+          <div class="rc-detail">7:30 PM → 11:30 PM</div>
+          <div class="rc-actions"><button class="rc-btn extend" onclick="showToast('✓','Extended 1 hour — Tk 2,000')">+1 Hour</button><button class="rc-btn end" onclick="showToast('✓','Session ended')">End</button></div>
+        </div>
+        <div class="room-card free">
+          <div class="rc-header"><div class="rc-name">🏠 Room D</div><span class="badge badge-success">Free</span></div>
+          <div class="rc-detail">Cap: 10 · Tk 1,500/hr</div>
+          <div class="rc-timer t-free">Available</div>
+          <div class="rc-detail">Next booking: 10:30 PM</div>
+          <div class="rc-actions"><button class="rc-btn book" onclick="showToast('✓','Walk-in booked!')">Book Walk-in</button></div>
+        </div>
+        <div class="room-card occ">
+          <div class="rc-header"><div class="rc-name">🏠 Room E</div><span class="badge badge-primary">Occupied</span></div>
+          <div class="rc-group">Farhan &amp; Co.</div>
+          <div class="rc-detail">👥 6 guests · Cap: 8</div>
+          <div class="rc-timer t-normal">0:45:20</div>
+          <div class="rc-detail">9:00 PM → 11:00 PM</div>
+          <div class="rc-actions"><button class="rc-btn extend" onclick="showToast('✓','Extended 1 hour — Tk 1,200')">+1 Hour</button><button class="rc-btn end" onclick="showToast('✓','Session ended')">End</button></div>
+        </div>
+        <div class="room-card free">
+          <div class="rc-header"><div class="rc-name">🏠 Room F</div><span class="badge badge-success">Free</span></div>
+          <div class="rc-detail">Cap: 6 · Tk 1,000/hr</div>
+          <div class="rc-timer t-free">Available</div>
+          <div class="rc-detail">No bookings tonight</div>
+          <div class="rc-actions"><button class="rc-btn book" onclick="showToast('✓','Walk-in booked!')">Book Walk-in</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- H3: Announcements -->
+    <div id="h3" class="panel">
+      <div class="ann-section">
+        <div class="ann-card">
+          <div class="ann-label">🎤 On Stage Now</div>
+          <div class="ann-singer">Rashid</div>
+          <div class="ann-song">Tum Hi Ho — Arijit Singh</div>
+        </div>
+        <div class="ann-next">
+          <div class="ann-next-badge">UP NEXT</div>
+          <div><div class="ann-next-name">Nadia · Table 5</div><div class="ann-next-song">Hotel California — Eagles</div></div>
+        </div>
+        <div class="ann-manual">
+          <label>Custom Announcement</label>
+          <input class="input" id="annText" placeholder="Type a message for the stage screen..." value="Happy Birthday Rashid! 🎂🎉">
+          <div class="ann-presets">
+            <button class="ann-preset" onclick="document.getElementById('annText').value='Happy Birthday! 🎂'">🎂 Birthday</button>
+            <button class="ann-preset" onclick="document.getElementById('annText').value='Last call for song requests!'">🎵 Last Call</button>
+            <button class="ann-preset" onclick="document.getElementById('annText').value='Happy Hour: 50% off cocktails!'">🍸 Happy Hour</button>
+            <button class="ann-preset" onclick="document.getElementById('annText').value='Closing in 30 minutes'">🕐 Closing</button>
+            <button class="ann-preset" onclick="document.getElementById('annText').value='Welcome to karaoke night!'">🎉 Welcome</button>
+          </div>
+          <button class="btn btn-primary" style="width:auto;" onclick="showToast('📢','Sent to stage screen')">📢 Send to Stage Screen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="toast-icon" id="toastIcon"></span><span id="toastMsg"></span></div>
+
+<script src="config.js"></script>
+<script>
+const titles = { h1: 'Queue Board', h2: 'Room Overview', h3: 'Announcements' };
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  document.getElementById('panel-title').textContent = titles[id];
+}
+function showToast(icon, msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastIcon').textContent = icon;
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>

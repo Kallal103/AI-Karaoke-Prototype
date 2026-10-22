@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>Cookspace Karaoke - Stage Screen</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { width: 100vw; height: 100vh; overflow: hidden; cursor: pointer; user-select: none; }
+  .screen { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+  .screen.active { display: flex; }
+
+  /* Watermark */
+  .watermark {
+    position: fixed; top: 20px; right: 28px; z-index: 100;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .wm-logo {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--primary), #a855f7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: white;
+  }
+  .wm-text { font-size: 12px; color: rgba(255,255,255,0.2); font-weight: 600; letter-spacing: 1px; }
+  .wm-venue { font-size: 12px; color: rgba(255,255,255,0.15); }
+  .wm-home {
+    display: block; margin-top: 4px; font-size: 10px;
+    color: rgba(255,255,255,0.15); text-decoration: none;
+    transition: color 0.2s;
+  }
+  .wm-home:hover { color: var(--primary); }
+
+  /* Dots */
+  .dots { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.15); transition: all 0.3s; }
+  .dot.active { background: var(--primary); width: 28px; border-radius: 5px; }
+
+  /* Particles */
+  .particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+  .particle { position: absolute; border-radius: 50%; background: rgba(108,92,231,0.12); animation: pfloat linear infinite; }
+  @keyframes pfloat {
+    0% { transform: translateY(100vh) scale(0); opacity: 0; }
+    10% { opacity: 1; } 90% { opacity: 1; }
+    100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+  }
+
+  /* ========== S1: Now Playing ========== */
+  #s1 {
+    flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 30%, #1a1040 0%, var(--bg) 70%);
+    padding: 40px 80px;
+  }
+  .s1-singer {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: var(--primary-light); padding: 8px 20px;
+    border-radius: 20px; font-size: 18px; font-weight: 600; color: var(--primary); margin-bottom: 14px;
+  }
+  .s1-singer .t-tag { background: var(--primary); color: white; padding: 2px 10px; border-radius: 10px; font-size: 14px; }
+  .s1-title { font-size: 52px; font-weight: 800; margin-bottom: 4px; }
+  .s1-artist { font-size: 22px; color: var(--text-dim); }
+
+  .ps-row {
+    display: flex; align-items: center; gap: 48px;
+    width: 100%; max-width: 1400px; margin: 28px 0;
+  }
+  .pitch-box {
+    flex: 1; height: 170px; background: rgba(108,92,231,0.06);
+    border-radius: var(--radius-xl); border: 1px solid rgba(108,92,231,0.12);
+    overflow: hidden;
+  }
+  .pitch-box svg { width: 100%; height: 100%; }
+  .score-ring {
+    width: 170px; height: 170px; position: relative; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .score-ring svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+  .sr-bg { fill: none; stroke: rgba(108,92,231,0.12); stroke-width: 8; }
+  .sr-fill { fill: none; stroke: var(--success); stroke-width: 8; stroke-linecap: round; stroke-dasharray: 502; stroke-dashoffset: 67; }
+  .sr-val { font-size: 52px; font-weight: 800; color: var(--success); z-index: 1; }
+  .sr-max { font-size: 18px; color: var(--text-dim); z-index: 1; position: absolute; bottom: 34px; }
+
+  .s1-lyrics { text-align: center; margin-top: 20px; width: 100%; max-width: 1000px; }
+  .s1-lyrics .l-past { font-size: 26px; color: rgba(255,255,255,0.2); margin: 6px 0; }
+  .s1-lyrics .l-curr { font-size: 40px; font-weight: 700; color: var(--primary); margin: 8px 0; animation: lpulse 2s ease-in-out infinite; }
+  .s1-lyrics .l-next { font-size: 26px; color: rgba(255,255,255,0.3); margin: 6px 0; }
+  @keyframes lpulse { 0%,100% { opacity:1; } 50% { opacity:0.8; } }
+
+  /* ========== S2: Up Next ========== */
+  #s2 {
+    flex-direction: column; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 60%, #1a1040 0%, var(--bg) 70%);
+    padding: 60px 80px;
+  }
+  .s2-current {
+    text-align: center; margin-bottom: 28px; padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08); width: 100%; max-width: 1200px;
+  }
+  .s2-now-label { font-size: 13px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 3px; }
+  .s2-now-text { font-size: 18px; margin-top: 4px; }
+  .s2-now-text span { color: var(--primary); }
+  .s2-header {
+    font-size: 46px; font-weight: 800; margin-bottom: 36px;
+    background: linear-gradient(135deg, var(--primary), #a855f7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .s2-cards { display: flex; gap: 28px; width: 100%; max-width: 1200px; justify-content: center; }
+  .s2-card {
+    flex: 1; max-width: 350px; background: var(--card);
+    border-radius: 24px; padding: 32px 24px;
+    border: 1px solid rgba(108,92,231,0.15);
+    text-align: center; animation: cardIn 0.6s ease-out both;
+  }
+  .s2-card:nth-child(1) { animation-delay: 0.1s; }
+  .s2-card:nth-child(2) { animation-delay: 0.3s; }
+  .s2-card:nth-child(3) { animation-delay: 0.5s; }
+  @keyframes cardIn { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .s2-pos {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--primary), #a855f7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 800; margin: 0 auto 16px; color: white;
+  }
+  .s2-card:first-child .s2-pos { background: linear-gradient(135deg, var(--success), #00e676); }
+  .s2-singer { font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+  .s2-song { font-size: 16px; color: var(--text-dim); margin-bottom: 8px; }
+  .s2-table { display: inline-block; padding: 4px 14px; border-radius: 10px; background: var(--primary-light); color: var(--primary); font-size: 13px; font-weight: 600; }
+
+  /* ========== S3: Idle ========== */
+  #s3 {
+    flex-direction: column; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #0a0a1a, #1a0a30, #0a0a1a);
+    background-size: 400% 400%; animation: gradShift 8s ease infinite;
+  }
+  @keyframes gradShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+  .idle-logo {
+    width: 140px; height: 140px; border-radius: 36px;
+    background: linear-gradient(135deg, var(--primary), #a855f7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 56px; font-weight: 800; color: white; margin-bottom: 20px;
+    box-shadow: 0 16px 64px rgba(108,92,231,0.35);
+  }
+  .idle-venue { font-size: 56px; font-weight: 800; margin-bottom: 4px; }
+  .idle-loc { font-size: 22px; color: var(--text-dim); margin-bottom: 40px; }
+  .idle-karaoke { font-size: 34px; font-weight: 700; display: flex; align-items: center; gap: 14px; }
+  .idle-karaoke .note { animation: nfloat 2s ease-in-out infinite; display: inline-block; }
+  .idle-karaoke .note:nth-child(2) { animation-delay: 0.3s; }
+  .idle-karaoke .note:nth-child(3) { animation-delay: 0.6s; }
+  @keyframes nfloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+  .idle-cta { font-size: 26px; color: var(--primary); font-weight: 600; margin-top: 14px; margin-bottom: 28px; }
+  .idle-qr {
+    width: 160px; height: 160px; border-radius: 18px; background: white;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 28px;
+  }
+  .idle-qr-inner {
+    width: 130px; height: 130px; border-radius: 10px;
+    background: repeating-conic-gradient(#1a1a2e 0% 25%, white 0% 50%) 0 0 / 26px 26px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .idle-qr-text { background: white; padding: 6px 10px; font-size: 12px; font-weight: 800; color: #1a1a2e; border-radius: 4px; }
+  .idle-stats { font-size: 18px; color: var(--text-dim); }
+  .idle-stats span { color: var(--primary); font-weight: 700; }
+  .idle-powered { margin-top: 24px; font-size: 13px; color: rgba(255,255,255,0.2); }
+  .idle-powered strong { color: rgba(108,92,231,0.5); }
+</style>
+</head>
+<body onclick="nextScreen()">
+
+<div class="watermark">
+  <div class="wm-logo">C</div>
+  <div><div class="wm-text">COOKSPACE KARAOKE</div><div class="wm-venue">BAGHA Club</div><a href="index.html" class="wm-home">← Back to Platform</a></div>
+</div>
+<div class="dots">
+  <div class="dot active" id="dot0"></div>
+  <div class="dot" id="dot1"></div>
+  <div class="dot" id="dot2"></div>
+</div>
+<div class="particles" id="particles"></div>
+
+<!-- S1: Now Playing -->
+<div id="s1" class="screen active">
+  <div class="s1-singer">🎤 Kallal <span class="t-tag">Table 7</span></div>
+  <div class="s1-title">Amar Shonar Bangla</div>
+  <div class="s1-artist">Rabindranath Tagore</div>
+  <div class="ps-row">
+    <div class="pitch-box">
+      <svg viewBox="0 0 800 170" preserveAspectRatio="none">
+        <path d="M0,130 Q50,90 100,100 T200,70 T300,80 T400,50 T500,60 T600,40 T700,55 T800,45" fill="none" stroke="rgba(108,92,231,0.15)" stroke-width="3"/>
+        <path d="M0,125 Q50,95 100,95 T200,75 T300,85 T400,55 T500,55 T600,45 T700,60 T800,50" fill="none" stroke="var(--primary)" stroke-width="4"/>
+        <circle cx="600" cy="45" r="7" fill="var(--primary)">
+          <animate attributeName="cx" values="580;620;580" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="cy" values="42;48;42" dur="1.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="1;0.4;1" dur="1s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="600" cy="45" r="14" fill="rgba(108,92,231,0.15)">
+          <animate attributeName="r" values="10;18;10" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.3;0.08;0.3" dur="2s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+    </div>
+    <div class="score-ring">
+      <svg viewBox="0 0 170 170">
+        <circle class="sr-bg" cx="85" cy="85" r="76"/>
+        <circle class="sr-fill" cx="85" cy="85" r="76"/>
+      </svg>
+      <div class="sr-val">87</div>
+      <div class="sr-max">/100</div>
+    </div>
+  </div>
+  <div class="s1-lyrics">
+    <div class="l-past">Amar shonar Bangla</div>
+    <div class="l-curr">Ami tomay bhalobashi</div>
+    <div class="l-next">Chirodin tomar akash</div>
+  </div>
+</div>
+
+<!-- S2: Up Next -->
+<div id="s2" class="screen">
+  <div class="s2-current">
+    <div class="s2-now-label">Now Playing</div>
+    <div class="s2-now-text">🎵 <span>Kallal</span> singing "Amar Shonar Bangla"</div>
+  </div>
+  <div class="s2-header">Up Next</div>
+  <div class="s2-cards">
+    <div class="s2-card">
+      <div class="s2-pos">1</div>
+      <div class="s2-singer">Rabib</div>
+      <div class="s2-song">Hotel California</div>
+      <div class="s2-table">Table 3</div>
+    </div>
+    <div class="s2-card">
+      <div class="s2-pos">2</div>
+      <div class="s2-singer">Fardin</div>
+      <div class="s2-song">Channa Mereya</div>
+      <div class="s2-table">Table 5</div>
+    </div>
+    <div class="s2-card">
+      <div class="s2-pos">3</div>
+      <div class="s2-singer">Ahnaf</div>
+      <div class="s2-song">Tum Hi Ho</div>
+      <div class="s2-table">Table 12</div>
+    </div>
+  </div>
+</div>
+
+<!-- S3: Idle -->
+<div id="s3" class="screen">
+  <div class="idle-logo">B</div>
+  <div class="idle-venue">BAGHA Club</div>
+  <div class="idle-loc">Gulshan 2, Dhaka</div>
+  <div class="idle-karaoke">
+    <span class="note">🎵</span> Karaoke Night <span class="note">🎶</span> <span class="note">🎸</span>
+  </div>
+  <div class="idle-cta">Scan QR to Queue a Song</div>
+  <div class="idle-qr"><div class="idle-qr-inner"><div class="idle-qr-text">QR</div></div></div>
+  <div class="idle-stats">🎵 <span>47</span> songs played tonight</div>
+  <div class="idle-powered">Powered by <strong>Cookspace Karaoke</strong></div>
+</div>
+
+<script src="config.js"></script>
+<script>
+const screens = ['s1','s2','s3'];
+let cur = 0, timer;
+
+function show(i) {
+  screens.forEach((id, j) => {
+    document.getElementById(id).classList.toggle('active', j === i);
+    document.getElementById('dot'+j).classList.toggle('active', j === i);
+  });
+  cur = i;
+  if (i === 1) {
+    document.querySelectorAll('.s2-card').forEach(c => { c.style.animation='none'; c.offsetHeight; c.style.animation=''; });
+  }
+}
+
+function nextScreen() { clearInterval(timer); show((cur+1)%screens.length); startTimer(); }
+function startTimer() { timer = setInterval(() => show((cur+1)%screens.length), 8000); }
+
+(function createParticles() {
+  const c = document.getElementById('particles');
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const s = Math.random()*5+2;
+    p.style.width = s+'px'; p.style.height = s+'px';
+    p.style.left = Math.random()*100+'%';
+    p.style.animationDuration = (Math.random()*15+10)+'s';
+    p.style.animationDelay = (Math.random()*10)+'s';
+    c.appendChild(p);
+  }
+})();
+
+startTimer();
+</script>
+</body>
+</html>

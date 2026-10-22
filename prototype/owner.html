@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookspace Karaoke - Owner Dashboard</title>
+<link rel="stylesheet" href="shared.css">
+<style>
+  body { display: flex; height: 100vh; overflow: hidden; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 240px; background: var(--card);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .sb-header { padding: 22px; border-bottom: 1px solid var(--border); }
+  .sb-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .sb-logo {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary), #a855f7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; color: white;
+  }
+  .sb-platform { font-size: 12px; font-weight: 700; color: var(--primary); }
+  .sb-venue { font-size: 17px; font-weight: 700; }
+  .sb-vsub { font-size: 12px; color: var(--text-dim); }
+  .sb-nav { flex: 1; padding: 8px 0; }
+  .sb-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 22px; width: 100%;
+    background: none; border: none; color: var(--text-dim);
+    font-size: 14px; cursor: pointer; font-family: var(--font); text-align: left;
+    transition: all 0.2s;
+  }
+  .sb-btn:hover { background: rgba(255,255,255,0.03); color: var(--text); }
+  .sb-btn.active { background: var(--primary-light); color: var(--primary); border-right: 3px solid var(--primary); }
+  .sb-btn .ico { font-size: 18px; width: 24px; text-align: center; }
+  .sb-footer { padding: 16px 22px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-dim); }
+  .sb-home {
+    display: flex; align-items: center; gap: 6px;
+    padding: 10px 22px; font-size: 12px; color: var(--text-dim);
+    text-decoration: none; border-top: 1px solid var(--border);
+    transition: color 0.2s;
+  }
+  .sb-home:hover { color: var(--primary); }
+  .sb-owner { color: var(--text); font-weight: 600; font-size: 14px; }
+
+  /* Main */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px; background: var(--card); border-bottom: 1px solid var(--border);
+  }
+  .topbar h2 { font-size: 18px; font-weight: 700; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; font-size: 13px; color: var(--text-dim); }
+  .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Stats */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+  .stat-card { background: var(--card); border-radius: var(--radius-lg); padding: 18px; border: 1px solid var(--border); }
+  .sc-label { font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .sc-val { font-size: 28px; font-weight: 800; }
+  .sc-change { font-size: 12px; margin-top: 4px; }
+  .sc-change.up { color: var(--success); }
+
+  /* Widget */
+  .w-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px; }
+  .w-full { grid-column: 1 / -1; }
+  .widget { background: var(--card); border-radius: var(--radius-lg); padding: 20px; border: 1px solid var(--border); }
+  .widget h3 { font-size: 14px; font-weight: 700; color: var(--text-dim); margin-bottom: 14px; }
+
+  /* NP widget */
+  .np-widget { display: flex; align-items: center; gap: 12px; padding: 10px; background: var(--success-light); border-radius: var(--radius-sm); }
+  .np-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+  .np-song { font-weight: 600; font-size: 14px; }
+  .np-sub { font-size: 12px; color: var(--text-dim); }
+
+  /* Order rows */
+  .ord-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .ord-row:last-child { border: none; }
+  .ord-table { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; background: var(--primary-light); color: var(--primary); }
+
+  /* Room dots */
+  .room-occ-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+  .rd { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .rd.occ { background: var(--primary-light); color: var(--primary); }
+  .rd.free { background: var(--success-light); color: var(--success); }
+  .rd.warn { background: var(--warning-light); color: var(--warning); }
+
+  /* Bar charts */
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 150px; }
+  .bc-col { flex: 1; display: flex; flex-direction: column; align-items: center; }
+  .bc-val { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+  .bc-bar { width: 100%; border-radius: 5px 5px 0 0; background: linear-gradient(180deg, var(--primary), rgba(108,92,231,0.4)); min-height: 4px; }
+  .bc-label { font-size: 10px; color: var(--text-dim); margin-top: 6px; }
+
+  /* H bars */
+  .hb-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+  .hb-name { width: 130px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hb-track { flex: 1; height: 7px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
+  .hb-fill { height: 100%; border-radius: 4px; }
+  .hb-fill.purple { background: var(--primary); }
+  .hb-fill.red { background: var(--accent); }
+  .hb-fill.green { background: var(--success); }
+  .hb-fill.yellow { background: var(--warning); }
+  .hb-val { width: 60px; text-align: right; font-size: 12px; font-weight: 600; color: var(--text-dim); }
+
+  /* Heatmap */
+  .heatmap { display: grid; grid-template-columns: 55px repeat(7, 1fr); gap: 3px; }
+  .hm-label { font-size: 10px; color: var(--text-dim); display: flex; align-items: center; }
+  .hm-cell { aspect-ratio: 1; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; }
+  .h0 { background: rgba(108,92,231,0.04); color: transparent; }
+  .h1 { background: rgba(108,92,231,0.12); color: var(--text-dim); }
+  .h2 { background: rgba(108,92,231,0.25); color: var(--text-secondary); }
+  .h3 { background: rgba(108,92,231,0.45); color: var(--text); }
+  .h4 { background: rgba(108,92,231,0.7); color: var(--text); }
+
+  /* Settings */
+  .s-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .s-section { margin-bottom: 24px; }
+  .s-section h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+  .s-table { width: 100%; border-collapse: separate; border-spacing: 0 4px; }
+  .s-table th { text-align: left; padding: 6px 10px; font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+  .s-table td { padding: 9px 10px; background: var(--card); font-size: 13px; }
+  .s-table tr td:first-child { border-radius: 8px 0 0 8px; }
+  .s-table tr td:last-child { border-radius: 0 8px 8px 0; }
+  .role-badge { padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+  .r-host { background: var(--success-light); color: var(--success); }
+  .r-bar { background: var(--accent-light); color: var(--accent); }
+  .r-desk { background: var(--warning-light); color: var(--warning); }
+  .r-owner { background: var(--primary-light); color: var(--primary); }
+
+  .conf-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: var(--card); border-radius: var(--radius-sm);
+    margin-bottom: 6px; border: 1px solid var(--border); font-size: 13px;
+  }
+  .conf-num {
+    width: 50px; padding: 5px 8px; border-radius: 6px;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    color: var(--text); text-align: center; font-size: 13px; font-weight: 600;
+  }
+  .qr-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .qr-card { background: var(--card); border-radius: 10px; padding: 14px; text-align: center; border: 1px solid var(--border); }
+  .qr-ph {
+    width: 56px; height: 56px; margin: 0 auto 6px; background: white; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .qr-inner { width: 44px; height: 44px; border-radius: 4px; background: repeating-conic-gradient(#1a1a2e 0% 25%, white 0% 50%) 0 0 / 8px 8px; }
+  .qr-label { font-size: 12px; font-weight: 600; }
+  .insight { margin-top: 14px; padding: 12px; background: var(--primary-light); border-radius: var(--radius-sm); font-size: 12px; color: var(--primary); }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sb-header">
+    <div class="sb-brand">
+      <div class="sb-logo">C</div>
+      <div class="sb-platform">COOKSPACE KARAOKE</div>
+    </div>
+    <div class="sb-venue">BAGHA Club</div>
+    <div class="sb-vsub">Owner Dashboard</div>
+  </div>
+  <div class="sb-nav">
+    <button class="sb-btn active" onclick="showPanel('d1',this)"><span class="ico">📊</span> Tonight</button>
+    <button class="sb-btn" onclick="showPanel('d2',this)"><span class="ico">📈</span> Analytics</button>
+    <button class="sb-btn" onclick="showPanel('d3',this)"><span class="ico">⚙</span> Settings</button>
+  </div>
+  <div class="sb-footer">
+    <div class="sb-owner">👑 Vanes</div>
+    <div>Owner · BAGHA Club</div>
+    <div class="powered-by" style="padding:8px 0 0;text-align:left;">Powered by <strong>Cookspace</strong></div>
+  </div>
+  <a href="index.html" class="sb-home">← Back to Platform</a>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <h2 id="panel-title">Tonight — Live</h2>
+    <div class="topbar-right">
+      <span>📅 Oct 20, 2026</span>
+      <span>🕘 9:50 PM</span>
+      <span style="color:var(--success);">● Live</span>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- D1: Tonight -->
+    <div id="d1" class="panel active">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="sc-label">👥 Active Guests</div><div class="sc-val">34</div><div class="sc-change up">▲ 12% vs last week</div></div>
+        <div class="stat-card"><div class="sc-label">🎵 Songs Played</div><div class="sc-val">47</div><div class="sc-change up">▲ 8% vs last week</div></div>
+        <div class="stat-card"><div class="sc-label">🍽 Orders Placed</div><div class="sc-val">23</div><div class="sc-change up">▲ 15% vs last week</div></div>
+        <div class="stat-card"><div class="sc-label">💰 Revenue Tonight</div><div class="sc-val" style="color:var(--success);">Tk 18,450</div><div class="sc-change up">▲ 22% vs last week</div></div>
+      </div>
+      <div class="w-grid">
+        <div class="widget">
+          <h3>🎵 Now Playing</h3>
+          <div class="np-widget"><div class="np-dot"></div><div><div class="np-song">Tum Hi Ho — Arijit Singh</div><div class="np-sub">Rashid · Table 3 · Score: 82</div></div></div>
+          <div style="margin-top:12px;font-size:13px;color:var(--text-dim);">Queue: <strong style="color:var(--text);">8 songs</strong> · Wait: <strong style="color:var(--warning);">~30 min</strong></div>
+        </div>
+        <div class="widget">
+          <h3>🏠 Room Occupancy</h3>
+          <div style="font-size:26px;font-weight:800;margin-bottom:10px;">4<span style="color:var(--text-dim);font-size:14px;font-weight:400;">/6 occupied</span></div>
+          <div class="room-occ-grid">
+            <div class="rd occ">A</div><div class="rd warn">B</div><div class="rd occ">C</div>
+            <div class="rd free">D</div><div class="rd occ">E</div><div class="rd free">F</div>
+          </div>
+        </div>
+        <div class="widget w-full">
+          <h3>📦 Recent Orders</h3>
+          <div class="ord-row"><span>#1248 · 9:44 PM</span><span class="ord-table">Room C</span><span>Wine ×3, Mojito ×2</span><span style="color:var(--accent);">Tk 3,050</span><span class="badge badge-warning">New</span></div>
+          <div class="ord-row"><span>#1247 · 9:42 PM</span><span class="ord-table">Table 7</span><span>Heineken ×2, Nachos ×1</span><span style="color:var(--accent);">Tk 1,280</span><span class="badge badge-warning">Preparing</span></div>
+          <div class="ord-row"><span>#1246 · 9:38 PM</span><span class="ord-table">Table 5</span><span>Mojito ×1, Nachos ×2</span><span style="color:var(--accent);">Tk 1,310</span><span class="badge badge-warning">Preparing</span></div>
+          <div class="ord-row"><span>#1245 · 9:35 PM</span><span class="ord-table">Table 3</span><span>Cola ×2, Fish &amp; Chips</span><span style="color:var(--accent);">Tk 820</span><span class="badge badge-success">Ready</span></div>
+          <div class="ord-row"><span>#1244 · 9:28 PM</span><span class="ord-table">Table 2</span><span>Red Wine ×2</span><span style="color:var(--accent);">Tk 1,300</span><span class="badge badge-success">Delivered</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- D2: Analytics -->
+    <div id="d2" class="panel">
+      <div class="w-grid" style="margin-bottom:18px;">
+        <div class="widget w-full">
+          <h3>📈 Revenue by Night (Last 7 Days)</h3>
+          <div class="bar-chart">
+            <div class="bc-col"><div class="bc-val">12K</div><div class="bc-bar" style="height:55%;"></div><div class="bc-label">Mon</div></div>
+            <div class="bc-col"><div class="bc-val">8K</div><div class="bc-bar" style="height:37%;"></div><div class="bc-label">Tue</div></div>
+            <div class="bc-col"><div class="bc-val">15K</div><div class="bc-bar" style="height:68%;"></div><div class="bc-label">Wed</div></div>
+            <div class="bc-col"><div class="bc-val">22K</div><div class="bc-bar" style="height:100%;background:linear-gradient(180deg,var(--success),rgba(0,200,83,0.4));"></div><div class="bc-label">Thu</div></div>
+            <div class="bc-col"><div class="bc-val">19K</div><div class="bc-bar" style="height:86%;"></div><div class="bc-label">Fri</div></div>
+            <div class="bc-col"><div class="bc-val">21K</div><div class="bc-bar" style="height:95%;"></div><div class="bc-label">Sat</div></div>
+            <div class="bc-col"><div class="bc-val">18K</div><div class="bc-bar" style="height:82%;background:linear-gradient(180deg,var(--warning),rgba(255,179,0,0.4));"></div><div class="bc-label">Sun*</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="w-grid" style="margin-bottom:18px;">
+        <div class="widget">
+          <h3>🎵 Top 10 Songs</h3>
+          <div class="hb-row"><span class="hb-name">Tum Hi Ho</span><div class="hb-track"><div class="hb-fill purple" style="width:100%;"></div></div><span class="hb-val">18</span></div>
+          <div class="hb-row"><span class="hb-name">Amar Shonar Bangla</span><div class="hb-track"><div class="hb-fill purple" style="width:83%;"></div></div><span class="hb-val">15</span></div>
+          <div class="hb-row"><span class="hb-name">Bohemian Rhapsody</span><div class="hb-track"><div class="hb-fill purple" style="width:72%;"></div></div><span class="hb-val">13</span></div>
+          <div class="hb-row"><span class="hb-name">Hotel California</span><div class="hb-track"><div class="hb-fill purple" style="width:67%;"></div></div><span class="hb-val">12</span></div>
+          <div class="hb-row"><span class="hb-name">Channa Mereya</span><div class="hb-track"><div class="hb-fill purple" style="width:61%;"></div></div><span class="hb-val">11</span></div>
+          <div class="hb-row"><span class="hb-name">Shape of You</span><div class="hb-track"><div class="hb-fill purple" style="width:56%;"></div></div><span class="hb-val">10</span></div>
+          <div class="hb-row"><span class="hb-name">Ei Meghla Dine Ekla</span><div class="hb-track"><div class="hb-fill purple" style="width:44%;"></div></div><span class="hb-val">8</span></div>
+          <div class="hb-row"><span class="hb-name">Lag Ja Gale</span><div class="hb-track"><div class="hb-fill purple" style="width:39%;"></div></div><span class="hb-val">7</span></div>
+          <div class="hb-row"><span class="hb-name">Kun Faya Kun</span><div class="hb-track"><div class="hb-fill purple" style="width:33%;"></div></div><span class="hb-val">6</span></div>
+          <div class="hb-row"><span class="hb-name">Don't Stop Believin'</span><div class="hb-track"><div class="hb-fill purple" style="width:28%;"></div></div><span class="hb-val">5</span></div>
+        </div>
+        <div class="widget">
+          <h3>🍽 Top Menu Items (Revenue)</h3>
+          <div class="hb-row"><span class="hb-name">Heineken Draft</span><div class="hb-track"><div class="hb-fill red" style="width:100%;"></div></div><span class="hb-val">Tk 8.1K</span></div>
+          <div class="hb-row"><span class="hb-name">House Red Wine</span><div class="hb-track"><div class="hb-fill red" style="width:80%;"></div></div><span class="hb-val">Tk 6.5K</span></div>
+          <div class="hb-row"><span class="hb-name">Mojito</span><div class="hb-track"><div class="hb-fill red" style="width:68%;"></div></div><span class="hb-val">Tk 5.5K</span></div>
+          <div class="hb-row"><span class="hb-name">Nachos Supreme</span><div class="hb-track"><div class="hb-fill red" style="width:47%;"></div></div><span class="hb-val">Tk 3.8K</span></div>
+          <div class="hb-row"><span class="hb-name">Fish &amp; Chips</span><div class="hb-track"><div class="hb-fill red" style="width:38%;"></div></div><span class="hb-val">Tk 3.1K</span></div>
+          <div class="hb-row"><span class="hb-name">Chicken Wings</span><div class="hb-track"><div class="hb-fill red" style="width:34%;"></div></div><span class="hb-val">Tk 2.8K</span></div>
+          <div class="hb-row"><span class="hb-name">Coca-Cola</span><div class="hb-track"><div class="hb-fill red" style="width:22%;"></div></div><span class="hb-val">Tk 1.8K</span></div>
+        </div>
+      </div>
+      <div class="w-grid">
+        <div class="widget">
+          <h3>🔥 Peak Hours Heatmap</h3>
+          <div class="heatmap">
+            <div class="hm-label"></div><div class="hm-label" style="justify-content:center;">Mon</div><div class="hm-label" style="justify-content:center;">Tue</div><div class="hm-label" style="justify-content:center;">Wed</div><div class="hm-label" style="justify-content:center;">Thu</div><div class="hm-label" style="justify-content:center;">Fri</div><div class="hm-label" style="justify-content:center;">Sat</div><div class="hm-label" style="justify-content:center;">Sun</div>
+            <div class="hm-label">6 PM</div><div class="hm-cell h0"></div><div class="hm-cell h0"></div><div class="hm-cell h1">3</div><div class="hm-cell h1">4</div><div class="hm-cell h1">5</div><div class="hm-cell h2">8</div><div class="hm-cell h1">4</div>
+            <div class="hm-label">7 PM</div><div class="hm-cell h1">4</div><div class="hm-cell h1">3</div><div class="hm-cell h2">8</div><div class="hm-cell h2">10</div><div class="hm-cell h3">14</div><div class="hm-cell h3">16</div><div class="hm-cell h2">9</div>
+            <div class="hm-label">8 PM</div><div class="hm-cell h1">6</div><div class="hm-cell h1">5</div><div class="hm-cell h2">12</div><div class="hm-cell h3">18</div><div class="hm-cell h4">24</div><div class="hm-cell h4">28</div><div class="hm-cell h3">15</div>
+            <div class="hm-label">9 PM</div><div class="hm-cell h2">10</div><div class="hm-cell h2">8</div><div class="hm-cell h3">16</div><div class="hm-cell h4">22</div><div class="hm-cell h4">30</div><div class="hm-cell h4">34</div><div class="hm-cell h3">18</div>
+            <div class="hm-label">10 PM</div><div class="hm-cell h2">8</div><div class="hm-cell h1">6</div><div class="hm-cell h3">14</div><div class="hm-cell h3">18</div><div class="hm-cell h4">26</div><div class="hm-cell h4">30</div><div class="hm-cell h3">14</div>
+            <div class="hm-label">11 PM</div><div class="hm-cell h1">4</div><div class="hm-cell h0"></div><div class="hm-cell h2">8</div><div class="hm-cell h2">10</div><div class="hm-cell h3">16</div><div class="hm-cell h3">18</div><div class="hm-cell h2">8</div>
+          </div>
+          <div style="margin-top:10px;font-size:11px;color:var(--text-dim);">Numbers = active guests. Darker = busier.</div>
+        </div>
+        <div class="widget">
+          <h3>🏠 Room Utilization (This Week)</h3>
+          <div class="hb-row"><span class="hb-name">Room A (12 pax)</span><div class="hb-track"><div class="hb-fill green" style="width:85%;"></div></div><span class="hb-val">85%</span></div>
+          <div class="hb-row"><span class="hb-name">Room B (8 pax)</span><div class="hb-track"><div class="hb-fill green" style="width:72%;"></div></div><span class="hb-val">72%</span></div>
+          <div class="hb-row"><span class="hb-name">Room C (20 pax)</span><div class="hb-track"><div class="hb-fill green" style="width:90%;"></div></div><span class="hb-val">90%</span></div>
+          <div class="hb-row"><span class="hb-name">Room D (10 pax)</span><div class="hb-track"><div class="hb-fill yellow" style="width:45%;"></div></div><span class="hb-val">45%</span></div>
+          <div class="hb-row"><span class="hb-name">Room E (8 pax)</span><div class="hb-track"><div class="hb-fill purple" style="width:60%;"></div></div><span class="hb-val">60%</span></div>
+          <div class="hb-row"><span class="hb-name">Room F (6 pax)</span><div class="hb-track"><div class="hb-fill red" style="width:30%;"></div></div><span class="hb-val">30%</span></div>
+          <div class="insight">💡 <strong>AI Insight:</strong> Room F is underutilized. Consider a weekday happy-hour package to fill it.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- D3: Settings -->
+    <div id="d3" class="panel">
+      <div class="s-grid">
+        <div>
+          <div class="s-section">
+            <h3>🍽 Menu Items</h3>
+            <table class="s-table">
+              <thead><tr><th>Item</th><th>Price</th><th>Available</th></tr></thead>
+              <tbody>
+                <tr><td>Heineken Draft</td><td>Tk 450</td><td><span class="toggle on" onclick="this.classList.toggle('on')"></span></td></tr>
+                <tr><td>House Red Wine</td><td>Tk 650</td><td><span class="toggle on" onclick="this.classList.toggle('on')"></span></td></tr>
+                <tr><td>Mojito</td><td>Tk 550</td><td><span class="toggle on" onclick="this.classList.toggle('on')"></span></td></tr>
+                <tr><td>Coca-Cola</td><td>Tk 150</td><td><span class="toggle on" onclick="this.classList.toggle('on')"></span></td></tr>
+                <tr><td>Nachos Supreme</td><td>Tk 380</td><td><span class="toggle on" onclick="this.classList.toggle('on')"></span></td></tr>
+                <tr><td>Fish &amp; Chips</td><td>Tk 520</td><td><span class="toggle" onclick="this.classList.toggle('on')"></span></td></tr>
+                <tr><td>Chicken Wings</td><td>Tk 350</td><td><span class="toggle on" onclick="this.classList.toggle('on')"></span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="s-section">
+            <h3>🏠 Rooms</h3>
+            <table class="s-table">
+              <thead><tr><th>Room</th><th>Capacity</th><th>Rate/hr</th></tr></thead>
+              <tbody>
+                <tr><td>Room A</td><td>12</td><td>Tk 1,500</td></tr>
+                <tr><td>Room B</td><td>8</td><td>Tk 1,200</td></tr>
+                <tr><td>Room C</td><td>20</td><td>Tk 2,000</td></tr>
+                <tr><td>Room D</td><td>10</td><td>Tk 1,500</td></tr>
+                <tr><td>Room E</td><td>8</td><td>Tk 1,200</td></tr>
+                <tr><td>Room F</td><td>6</td><td>Tk 1,000</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div class="s-section">
+            <h3>👥 Staff Accounts</h3>
+            <table class="s-table">
+              <thead><tr><th>Name</th><th>Role</th><th>PIN</th></tr></thead>
+              <tbody>
+                <tr><td>Rahul</td><td><span class="role-badge r-host">Host / KJ</span></td><td>****</td></tr>
+                <tr><td>Sakib</td><td><span class="role-badge r-bar">Bar</span></td><td>****</td></tr>
+                <tr><td>Tamim</td><td><span class="role-badge r-desk">Front Desk</span></td><td>****</td></tr>
+                <tr><td>Vanes</td><td><span class="role-badge r-owner">Owner</span></td><td>****</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="s-section">
+            <h3>⚙ Queue Config</h3>
+            <div class="conf-row"><span>Fair Rotation</span><span class="toggle on" onclick="this.classList.toggle('on')"></span></div>
+            <div class="conf-row"><span>Max Songs per Table</span><input class="conf-num" value="2"></div>
+            <div class="conf-row"><span>Guest Phone Alerts</span><span class="toggle on" onclick="this.classList.toggle('on')"></span></div>
+            <div class="conf-row"><span>Live Pitch Scoring</span><span class="toggle on" onclick="this.classList.toggle('on')"></span></div>
+          </div>
+          <div class="s-section">
+            <h3>📱 QR Codes</h3>
+            <div class="qr-grid">
+              <div class="qr-card"><div class="qr-ph"><div class="qr-inner"></div></div><div class="qr-label">Table 1</div></div>
+              <div class="qr-card"><div class="qr-ph"><div class="qr-inner"></div></div><div class="qr-label">Table 2</div></div>
+              <div class="qr-card"><div class="qr-ph"><div class="qr-inner"></div></div><div class="qr-label">Table 3</div></div>
+              <div class="qr-card"><div class="qr-ph"><div class="qr-inner"></div></div><div class="qr-label">Table 4</div></div>
+              <div class="qr-card"><div class="qr-ph"><div class="qr-inner"></div></div><div class="qr-label">Table 5</div></div>
+              <div class="qr-card"><div class="qr-ph"><div class="qr-inner"></div></div><div class="qr-label">Table 6</div></div>
+              <div class="qr-card"><div class="qr-ph"><div class="qr-inner"></div></div><div class="qr-label">Table 7</div></div>
+              <div class="qr-card"><div class="qr-ph"><div class="qr-inner"></div></div><div class="qr-label">Table 8</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+const titles = { d1: 'Tonight — Live', d2: 'Analytics', d3: 'Venue Settings' };
+function showPanel(id, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  document.getElementById('panel-title').textContent = titles[id];
+}
+</script>
+</body>
+</html>
